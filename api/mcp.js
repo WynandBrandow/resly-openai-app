@@ -1,5 +1,4 @@
-﻿import { success, failure } from '../lib/tool-result.js'
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+﻿import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 
@@ -35,10 +34,9 @@ function buildServer() {
     },
     async (args) => {
       try {
-        return success(ok(await listReservations(args)));
+        return ok(await listReservations(args));
       } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-        return success(fail(error));
+        return fail(error);
       }
     }
   );
@@ -54,10 +52,9 @@ function buildServer() {
     },
     async (args) => {
       try {
-        return success(ok(await getReservationById(args)));
+        return ok(await getReservationById(args));
       } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-        return success(fail(error));
+        return fail(error);
       }
     }
   );
@@ -73,10 +70,9 @@ function buildServer() {
     },
     async ({ payload }) => {
       try {
-        return success(ok(await createReservation(payload)));
+        return ok(await createReservation(payload));
       } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-        return success(fail(error));
+        return fail(error);
       }
     }
   );
@@ -94,10 +90,9 @@ function buildServer() {
     },
     async (args) => {
       try {
-        return success(ok(await listMessages(args)));
+        return ok(await listMessages(args));
       } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-        return success(fail(error));
+        return fail(error);
       }
     }
   );
@@ -113,10 +108,9 @@ function buildServer() {
     },
     async ({ payload }) => {
       try {
-        return success(ok(await createMessage(payload)));
+        return ok(await createMessage(payload));
       } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-        return success(fail(error));
+        return fail(error);
       }
     }
   );
@@ -132,10 +126,9 @@ function buildServer() {
     },
     async ({ payload }) => {
       try {
-        return success(ok(await createGuestCharge(payload)));
+        return ok(await createGuestCharge(payload));
       } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-        return success(fail(error));
+        return fail(error);
       }
     }
   );
@@ -152,10 +145,9 @@ function buildServer() {
     },
     async (args) => {
       try {
-        return success(ok(await listConversations(args)));
+        return ok(await listConversations(args));
       } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-        return success(fail(error));
+        return fail(error);
       }
     }
   );
@@ -174,10 +166,8 @@ export default async function handler(req, res) {
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
-    return failure(error?.message || 'I’m having trouble retrieving that from the system — let me try again.');
-    res.status(500).json({
-      error: error instanceof Error ? error.message : String(error)
-    });
+    res.status(500).json(
+      fail(error)
+    );
   }
 }
-
