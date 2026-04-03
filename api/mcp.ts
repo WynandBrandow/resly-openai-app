@@ -1,4 +1,4 @@
-import { getAvailability } from "../src/resly";
+import { getAvailability } from "../src/resly.js";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
