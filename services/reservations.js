@@ -1,6 +1,13 @@
 import { reslyRequest } from "../lib/resly-client.js";
 
-export const reservations = {
-  list: (query) => reslyRequest("GET", "/reservations", { query }),
-  get: (id) => reslyRequest("GET", `/reservations/${id}`)
-};
+export async function listReservations(args = {}) {
+  return reslyRequest("GET", "/reservations", { query: args });
+}
+
+export async function getReservationById({ reservationId }) {
+  return reslyRequest("GET", `/reservations/${reservationId}`);
+}
+
+export async function createReservation(payload) {
+  return reslyRequest("POST", "/reservations", { body: payload });
+}

@@ -2,187 +2,172 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 
-// ---- Resly client ----
-let token = null;
-let expires = 0;
+import { ok, fail } from "../lib/tool-result.js";
+import {
+  listReservations,
+  getReservationById,
+  createReservation
+} from "../services/reservations.js";
+import { listMessages, createMessage } from "../services/messages.js";
+import { createGuestCharge } from "../services/guest-charges.js";
+import { listConversations } from "../services/conversations.js";
 
-async function getToken() {
-  const now = Date.now();
-  if (token && now < expires - 60000) return token;
-
-  const res = await fetch(`${process.env.RESLY_BASE_URL}/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      accountId: process.env.RESLY_ACCOUNT_ID,
-      key: process.env.RESLY_API_KEY
-    })
+function buildServer() {
+  const server = new McpServer({
+    name: "allegra-connect",
+    version: "1.0.0"
   });
 
-  const data = await res.json();
-
-  if (!res.ok || !data.token) {
-    throw new Error(data.message || "Auth failed");
-  }
-
-  token = data.token;
-  expires = now + data.expires_in * 1000;
-
-  return token;
-}
-
-async function resly(method, path, { query, body } = {}) {
-  const t = await getToken();
-
-  let url = process.env.RESLY_BASE_URL + path;
-
-  if (query) {
-    const params = new URLSearchParams(query);
-    url += "?" + params.toString();
-  }
-
-  const res = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${t}`
+  server.registerTool(
+    "reservations_list",
+    {
+      title: "List reservations",
+      description: "List reservations in Resly with optional filters.",
+      inputSchema: {
+        arrivalDate: z.string().optional(),
+        departureDate: z.string().optional(),
+        reservationId: z.string().optional(),
+        guestName: z.string().optional(),
+        status: z.string().optional(),
+        limit: z.number().optional()
+      }
     },
-    body: body ? JSON.stringify(body) : undefined
-  });
+    async (args) => {
+      try {
+        return ok(await listReservations(args));
+      } catch (error) {
+        return fail(error);
+      }
+    }
+  );
 
-  const data = await res.json();
+  server.registerTool(
+    "reservation_get",
+    {
+      title: "Get reservation",
+      description: "Get a specific reservation by its reservation ID.",
+      inputSchema: {
+        reservationId: z.string()
+      }
+    },
+    async (args) => {
+      try {
+        return ok(await getReservationById(args));
+      } catch (error) {
+        return fail(error);
+      }
+    }
+  );
 
-  if (!res.ok) {
-    throw new Error(JSON.stringify(data));
-  }
+  server.registerTool(
+    "reservation_create",
+    {
+      title: "Create reservation",
+      description: "Create a reservation in Resly.",
+      inputSchema: {
+        payload: z.any()
+      }
+    },
+    async ({ payload }) => {
+      try {
+        return ok(await createReservation(payload));
+      } catch (error) {
+        return fail(error);
+      }
+    }
+  );
 
-  return data;
+  server.registerTool(
+    "messages_list",
+    {
+      title: "List messages",
+      description: "List guest messages in Resly.",
+      inputSchema: {
+        reservationId: z.string().optional(),
+        conversationId: z.string().optional(),
+        guestName: z.string().optional()
+      }
+    },
+    async (args) => {
+      try {
+        return ok(await listMessages(args));
+      } catch (error) {
+        return fail(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "message_create",
+    {
+      title: "Create message",
+      description: "Create or send a guest message in Resly.",
+      inputSchema: {
+        payload: z.any()
+      }
+    },
+    async ({ payload }) => {
+      try {
+        return ok(await createMessage(payload));
+      } catch (error) {
+        return fail(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "guest_charge_create",
+    {
+      title: "Create guest charge",
+      description: "Create a guest charge in Resly.",
+      inputSchema: {
+        payload: z.any()
+      }
+    },
+    async ({ payload }) => {
+      try {
+        return ok(await createGuestCharge(payload));
+      } catch (error) {
+        return fail(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "conversations_list",
+    {
+      title: "List conversations",
+      description: "List conversations in Resly.",
+      inputSchema: {
+        reservationId: z.string().optional(),
+        guestName: z.string().optional()
+      }
+    },
+    async (args) => {
+      try {
+        return ok(await listConversations(args));
+      } catch (error) {
+        return fail(error);
+      }
+    }
+  );
+
+  return server;
 }
 
-function ok(data) {
-  return {
-    content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-    structuredContent: data
-  };
-}
-
-function fail(e) {
-  return {
-    content: [{ type: "text", text: e.message }],
-    isError: true
-  };
-}
-
-// ---- MCP HANDLER ----
 export default async function handler(req, res) {
   try {
-    const server = new McpServer({
-      name: "allegra-connect",
-      version: "1.0.0"
-    });
-
-    // ---- RESERVATIONS ----
-    server.registerTool(
-      "reservations_list",
-      {
-        description: "List reservations",
-        inputSchema: {
-          arrivalDate: z.string().optional(),
-          departureDate: z.string().optional(),
-          guestName: z.string().optional()
-        }
-      },
-      async (args) => {
-        try {
-          return ok(await resly("GET", "/reservations", { query: args }));
-        } catch (e) {
-          return fail(e);
-        }
-      }
-    );
-
-    server.registerTool(
-      "reservation_get",
-      {
-        description: "Get reservation by ID",
-        inputSchema: {
-          reservationId: z.string()
-        }
-      },
-      async ({ reservationId }) => {
-        try {
-          return ok(await resly("GET", `/reservations/${reservationId}`));
-        } catch (e) {
-          return fail(e);
-        }
-      }
-    );
-
-    // ---- MESSAGES ----
-    server.registerTool(
-      "messages_list",
-      {
-        description: "List messages",
-        inputSchema: {
-          reservationId: z.string().optional()
-        }
-      },
-      async (args) => {
-        try {
-          return ok(await resly("GET", "/messages", { query: args }));
-        } catch (e) {
-          return fail(e);
-        }
-      }
-    );
-
-    server.registerTool(
-      "message_create",
-      {
-        description: "Create message",
-        inputSchema: {
-          payload: z.any()
-        }
-      },
-      async ({ payload }) => {
-        try {
-          return ok(await resly("POST", "/messages", { body: payload }));
-        } catch (e) {
-          return fail(e);
-        }
-      }
-    );
-
-    // ---- GUEST CHARGES ----
-    server.registerTool(
-      "guest_charge_create",
-      {
-        description: "Create guest charge",
-        inputSchema: {
-          payload: z.any()
-        }
-      },
-      async ({ payload }) => {
-        try {
-          return ok(await resly("POST", "/guest-charges", { body: payload }));
-        } catch (e) {
-          return fail(e);
-        }
-      }
-    );
-
-    // ---- TRANSPORT ----
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true
     });
 
+    const server = buildServer();
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
-
-  } catch (err) {
+  } catch (error) {
     res.status(500).json({
-      error: err.message || "MCP failure"
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 }

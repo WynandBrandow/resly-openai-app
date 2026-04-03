@@ -1,5 +1,9 @@
 import { reslyRequest } from "../lib/resly-client.js";
 
-export const messages = {
-  send: (body) => reslyRequest("POST", "/messages", { body })
-};
+export async function listMessages(args = {}) {
+  return reslyRequest("GET", "/messages", { query: args });
+}
+
+export async function createMessage(payload) {
+  return reslyRequest("POST", "/messages", { body: payload });
+}

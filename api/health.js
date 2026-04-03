@@ -1,7 +1,7 @@
-export default function handler(req, res) {
+export default function handler(_req, res) {
   res.status(200).json({
     ok: true,
-    service: "allegra-connect",
+    service: "allegra-connect-mcp",
     time: new Date().toISOString()
   });
 }
