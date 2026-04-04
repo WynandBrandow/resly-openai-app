@@ -1,0 +1,12 @@
+body { font-family: Inter, Arial; background: #0b0f17; color: #e6edf3; margin: 0; }
+.app { max-width: 900px; margin: 40px auto; padding: 20px; }
+header { display: flex; align-items: center; gap: 12px; }
+h1 { margin: 0; }
+.badge { background: #1f6feb; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+.controls { margin: 20px 0; display: flex; gap: 10px; }
+select, button, textarea { background: #111827; color: white; border: 1px solid #30363d; padding: 10px; border-radius: 8px; }
+textarea { width: 100%; height: 120px; }
+.panel { margin-top: 20px; }
+pre { background: #111827; padding: 15px; border-radius: 8px; overflow: auto; }
+button { cursor: pointer; background: #238636; }
+button:hover { background: #2ea043; }
