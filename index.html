@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Allegra Connect · AI Lab</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Allegra Connect</h1>
+      <span class="badge">AI Lab</span>
+    </header>
+
+    <section class="controls">
+      <select id="operation"></select>
+      <button onclick="run()">Run</button>
+    </section>
+
+    <section class="panel">
+      <h3>Payload</h3>
+      <textarea id="payload">{}</textarea>
+    </section>
+
+    <section class="panel">
+      <h3>Response</h3>
+      <pre id="response"></pre>
+    </section>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
